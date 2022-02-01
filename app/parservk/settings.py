@@ -1,4 +1,8 @@
 log_settings = {
-    'db': {'file_name': 'db_log.log'},
-    'app': {'file_name': 'app_log.log'},
+    'db': {'name': 'db_log.log'},
+    'app': {'name': 'app_log.log'},
+}
+db_settings = {
+    'db': {'name': 'main_sqlite.db'},
+    'table': {'name': 'ticket_tdb'},
 }

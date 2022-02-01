@@ -9,13 +9,16 @@ from aiohttp_session import get_session
 from string import ascii_uppercase, digits
 from random import choice
 from datetime import datetime
-from settings import log_settings as l_set
+#загрузка внутренних модулей проекта
+from app.parservk.settings import log_settings as l_set # импорт настроек во вьюшки
+from app.parservk.settings import db_settings as db_set # импорт настроек во вьюшки
+#from settings import log_settings, db_settings# as l_set, db_set
 
 
 # создаем функцию, которая будет отдавать html-файл
 @aiohttp_jinja2.template("index.html")
 async def index(request):
-   return {'title': 'Пишем первое приложение на aiohttp'}
+   return {'title': 'HORUSKA'}
 
 # вьюшка которая показывает сгенерированный билет
 # при удачной загрузке файла в index_post
@@ -33,10 +36,15 @@ async def index_post(request):
    assert field.name == 'csv'
    filename = field.filename
 
+   # генерируем тикет
+   ticket = ''
+   for _ in range(10):
+      ticket += str( (choice(ascii_uppercase), choice(digits))[choice([0,1])] )
+
    # из за возможности отправки файлов большого объема
    # получаем файл частями(чанками)
    size = 0
-   with open('temp/'+filename, 'wb') as f:
+   with open(f'temp/{ticket}.csv', 'wb') as f:
        while True:
            chunk = await field.read_chunk()  # 8192 bytes by default.
            if not chunk:
@@ -48,18 +56,13 @@ async def index_post(request):
    # с полученным тикетом
    location = request.app.router['ticket'].url_for()
 
-   # генерируем тикет
-   ticket = ''
-   for _ in range(10):
-      ticket += str( (choice(ascii_uppercase), choice(digits))[choice([0,1])] )
-
    # записываем тикет в сессию пользователя
    session = await get_session(request)
    session['ticket'] = ticket
 
    # записываем тикет в БД
-   async with aiosqlite.connect('test_sqlite.db') as db:
-      query = '''INSERT INTO "ticket_tdb" 
+   async with aiosqlite.connect(db_set['db']['name']) as db:
+      query = f'''INSERT INTO "{db_set['table']['name']}" 
                (ticket, date_create, completed, deployed)
                VALUES(?,?,0,0);'''
       await db.execute(query, (ticket, str(datetime.today())))

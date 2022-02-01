@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime
 
 from app.parservk.settings import log_settings as l_set
+from app.parservk.settings import db_settings as db_set
 
 # в этой функции производится настройка url-путей для всего приложения
 def setup_routes(application):
@@ -17,26 +18,35 @@ def setup_external_libraries(application: web.Application) -> None:
    aiohttp_jinja2.setup(application, loader=jinja2.FileSystemLoader("templates"))
 
 def check_sqlite_dbase():
-   sqlite_connection = sqlite3.connect('main_sqlite.db')
+   sqlite_connection = sqlite3.connect(db_set['db']['name'])
    cursor = sqlite_connection.cursor()
-   query = r"SELECT name FROM sqlite_master WHERE type='table' AND name='ticket_tdb'"
-   cursor.execute(query)
+   query = r"SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+   cursor.execute(query, (db_set['table']['name'],))
    record = cursor.fetchall()
+
    if not record:
-      sqlite_create_table_query = '''CREATE TABLE ticket_tdb (
-         id INTEGER PRIMARY KEY,
+      sqlite_create_table_query = f'''CREATE TABLE {db_set['table']['name']} 
+         (id INT PRIMARY KEY,
          ticket TEXT NOT NULL,
          date_create TEXT NOT NULL,
          completed TEXT,
          deployed TEXT);'''
+
       cursor.execute(sqlite_create_table_query)
-      with open(l_set['db']['file_name'],'a') as f:
-         f.write(str(datetime.today())+': таблица ticket_tdb создана в main_sqlite.db\n')
+
+      with open(l_set['db']['name'],'a') as f:
+         f.write(str(datetime.today())
+            +f': таблица {db_set["table"]["name"]} '
+            +f'создана в {db_set["db"]["name"]}\n')
+
       record = True
       sqlite_connection.commit()
+
    else:
-      with open(l_set['db']['file_name'],'a') as f:
-         f.write(str(datetime.today())+': подключены к ticket_tdb\n')
+      with open(l_set['db']['name'],'a') as f:
+         f.write(str(datetime.today())
+            +f': подключены к {db_set["table"]["name"]}\n')
+
    cursor.close()
 
 
