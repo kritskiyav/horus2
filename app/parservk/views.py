@@ -1,5 +1,7 @@
 # асинхронная библиотека для sqlite3
 import aiosqlite
+# загрузка asyncio
+import asyncio
 # асинхронные запросы и jinja для templates
 import aiohttp_jinja2
 from aiohttp import web
@@ -72,3 +74,5 @@ async def index_post(request):
       f.write(f'{str(datetime.today())}: внесена запись с тикетом {ticket}\n')
    
    raise web.HTTPFound(location=location)
+
+
