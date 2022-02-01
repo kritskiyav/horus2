@@ -1,0 +1,11 @@
+<title>{% block title %}{% endblock %}</title>
+{{title}}
+
+<form action="/index_post" method="post" accept-charset="utf-8"
+      enctype="multipart/form-data">
+
+    <label for="csv">.csv</label>
+    <input id="csv" name="csv" type="file" value=""/>
+
+    <input type="submit" value="Отправить"/>
+</form>
