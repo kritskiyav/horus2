@@ -5,3 +5,4 @@ aiofile
 aiohttp
 bs4
 gunicorn
+aiosqlite
