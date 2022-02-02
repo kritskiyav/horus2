@@ -4,3 +4,4 @@ aiohttp_session
 aiofile
 aiohttp
 bs4
+gunicorn
