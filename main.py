@@ -4,6 +4,7 @@ import aiohttp_jinja2  # адаптация jinja2 к aiohttp
 from aiohttp_session import setup,SimpleCookieStorage
 import sqlite3
 from datetime import datetime
+import gunicorn
 
 from app.parservk.settings import log_settings as l_set
 from app.parservk.settings import db_settings as db_set
