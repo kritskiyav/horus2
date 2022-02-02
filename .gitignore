@@ -21,3 +21,4 @@ test_db_viewer.py
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 *.csv
+test_bs_viewer.py
