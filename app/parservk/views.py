@@ -2,8 +2,11 @@
 import aiosqlite
 # загрузка asyncio
 import asyncio
+# загрузка асинхронной работы с файлами
+from aiofile import async_open
 # асинхронные запросы и jinja для templates
 import aiohttp_jinja2
+import aiohttp
 from aiohttp import web
 # сессии для aiohttp
 from aiohttp_session import get_session
@@ -14,8 +17,14 @@ from datetime import datetime
 #загрузка внутренних модулей проекта
 from app.parservk.settings import log_settings as l_set # импорт настроек во вьюшки
 from app.parservk.settings import db_settings as db_set # импорт настроек во вьюшки
-#from settings import log_settings, db_settings# as l_set, db_set
+# загрузка модулей для обработки/парсинга страниц
+import csv
+from bs4 import BeautifulSoup as bs
+import re
+# импорт шаблонизатора для формирования ответной страницы
+import jinja2
 
+import os
 
 # создаем функцию, которая будет отдавать html-файл
 @aiohttp_jinja2.template("index.html")
@@ -70,9 +79,127 @@ async def index_post(request):
       await db.execute(query, (ticket, str(datetime.today())))
       await db.commit()
    # запись в log о добавлении тикета в БД
-   with open(l_set['db']['name'], 'a') as f:
+   with open(l_set['db']['name'], 'a',encoding="utf-8") as f:
       f.write(f'{str(datetime.today())}: внесена запись с тикетом {ticket}\n')
    
+   # await asyncio.gather(read_ticket_csv(ticket))
+   # loop = asyncio.get_event_loop()
+   asyncio.ensure_future(read_ticket_csv(ticket))
    raise web.HTTPFound(location=location)
 
+async def read_ticket_csv(ticket):
+   await asyncio.sleep(0)
+   # открываем файл ticket.csv
+   with open(f'temp/{ticket}.csv') as afp:
+      find_list = []
+      # формируем лист(список) фамилий
+      for line in afp:
+         temp = line.rstrip().split(',')
+         if len(temp) == 2:
+            find_list.append( (temp[0],temp[1]) )
+             # передаем управление, что бы не блокировать другие функции
+            await asyncio.sleep(0)
+   find_list = tuple(find_list)
+   # запускаем корутину по поиску
+   # await asyncio.gather(find_people_from_tuple(find_list, ticket))
+   asyncio.ensure_future(find_people_from_tuple(find_list, ticket))
 
+async def find_people_from_tuple(peoples: tuple, ticket):
+   res = []
+   for people in peoples:
+      name = '%20'.join(people[0].split())
+      bday, bmonth, byear = people[1].split('.')
+      query = ('https://vk.com/search?c%5B'+
+         f'bday%5D={bday}&c%5B'+
+         f'bmonth%5D={bmonth}&c%5B'+
+         f'byear%5D={byear}&c%5B'+
+         'name%5D=1&c%5B'+
+         'per_page%5D=40&c%5B'+
+         f'q%5D={name}&c%5B'+
+         'section%5D=people')
+
+      async with aiohttp.ClientSession() as session:
+         async with session.get(query) as resp:
+            html_text = str(await resp.text())
+
+      soup = bs(html_text, 'html.parser')
+      a = (soup.find_all('div','si_body'))
+      b = (soup.find_all('div','Avatar__image Avatar__image-1'))
+      c = (soup.find_all('a','simple_fit_item search_item'))
+      d = (soup.find_all('div','si_body'))
+
+      name_reg = r'>\w+\s*\w*<'
+      ava_reg = r'''url\('.+'\)\"'''
+      ava_fix_path = r'amp;'
+      vk_start_url = 'https://vk.com'
+
+      for sname,sava,surl,sdata in zip(a,b,c,d):
+         name = re.search(name_reg ,str(sname))[0][1:-1]
+         ava = re.search(ava_reg, str(sava))[0]
+         ava = re.search(ava_reg, str(sava))[0][5:-3]
+         if ava[0] == '/':
+             ava = vk_start_url+ava
+         else:
+             re.sub(ava_fix_path,'',ava)
+         url = vk_start_url+surl['href']
+         data = ','.join([i.get_text() for i in sdata.find_all('div','si_slabel')])
+         res.append( (ava, name, url, data) )
+         await asyncio.sleep(0)
+
+   templateLoader = jinja2.FileSystemLoader(searchpath="templates/")
+   templateEnv = jinja2.Environment(loader=templateLoader)
+   TEMPLATE_FILE = "result.html"
+   template = templateEnv.get_template(TEMPLATE_FILE)
+   outputText = template.render(ticket=ticket,result_list=res)
+   async with async_open(f'temp/output_{ticket}.html','w') as f:
+       await f.write(outputText)
+
+   async with aiosqlite.connect(db_set['db']['name']) as db:
+      query = f'''UPDATE "{db_set['table']['name']}" 
+               SET completed = "1"
+               WHERE ticket = ?'''
+      await db.execute(query, (ticket,))
+      await db.commit()
+   async with async_open(l_set['db']['name'], 'a',encoding="utf-8") as f:
+         await f.write(
+            f'{str(datetime.today())}: тикет {ticket} помечен как выполненный\n')
+
+
+@aiohttp_jinja2.template("ticket_get.html")
+async def ticket_get(request):
+   return None
+
+@aiohttp_jinja2.template("ticket_post.html")
+async def ticket_post(request):
+   data = await request.post()
+   user_ticket = data['ticket']
+
+   # проверяем выполнен ли тикет в базе
+   row = ''
+   async with aiosqlite.connect(db_set['db']['name']) as db:
+      query = f'''SELECT completed FROM "{db_set['table']['name']}" 
+               WHERE ticket = ?'''
+      async with db.execute(query,(user_ticket,)) as cursor:
+         async for row in cursor:
+            res = row
+            break
+
+   if row and row[0] == '1':
+      async with aiosqlite.connect(db_set['db']['name']) as db:
+         query = f'''DELETE FROM "{db_set['table']['name']}" 
+                  WHERE ticket = ?'''
+         cursor = await db.execute(query,(user_ticket,))
+      async with async_open(l_set['db']['name'], 'a',encoding="utf-8") as f:
+         await f.write(f'{str(datetime.today())}: удалена запись с тикетом {user_ticket}\n')
+      async with async_open(f'temp/output_{user_ticket}.html') as f:
+         file = await f.read()
+      os.remove(f'temp/output_{user_ticket}.html')
+      os.remove(f'temp/{user_ticket}.csv')
+      return web.Response(text = file, content_type = 'text/html')
+   else:
+      location = request.app.router['ticket_get'].url_for()
+      raise web.HTTPFound(location=location)
+
+@aiohttp_jinja2.template("help.html")
+async def help(request):
+   return None

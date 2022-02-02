@@ -1,2 +1,5 @@
-<title>{% block ticket %}{% endblock %}</title>
-{{ticket}}
+{% extends "base.html" %}
+
+{% block content %}
+    <p style="text-align:center">Ваш билет: {{ticket}}</p>
+{% endblock %}

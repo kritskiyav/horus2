@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table align="center" border="1" cellpadding="1" cellspacing="1" style="width:500px">
+    <caption>Результаты поиска по билету № {{ ticket }}</caption>
+        <thead>
+        <tr>
+            <th scope="col">Фото</th>
+            <th scope="col">Имя</th>
+            <th scope="col">URL</th>
+            <th scope="col">Доп. информация</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in result_list %}
+        <tr>
+            <td><img alt="None" src={{ item[0] }} /></td>
+            <td>{{ item[1] }}</td>
+            <td><a href={{ item[2] }} target="_blank">ПРОФИЛЬ</a></td>
+            <td>{{ item[3] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

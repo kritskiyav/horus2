@@ -34,7 +34,7 @@ def check_sqlite_dbase():
 
       cursor.execute(sqlite_create_table_query)
 
-      with open(l_set['db']['name'],'a') as f:
+      with open(l_set['db']['name'],'a',encoding="utf-8") as f:
          f.write(str(datetime.today())
             +f': таблица {db_set["table"]["name"]} '
             +f'создана в {db_set["db"]["name"]}\n')
@@ -43,7 +43,7 @@ def check_sqlite_dbase():
       sqlite_connection.commit()
 
    else:
-      with open(l_set['db']['name'],'a') as f:
+      with open(l_set['db']['name'],'a',encoding="utf-8") as f:
          f.write(str(datetime.today())
             +f': подключены к {db_set["table"]["name"]}\n')
 

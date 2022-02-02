@@ -1,0 +1,9 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+	<center><form action="/ticket_post" method="post" accept-charset="utf-8" enctype="application/x-www-form-urlencoded">
+		Предъявите билет:
+		<input maxlength="10" id="ticket" name="ticket" required="required" size="10" type="text" value="" autofocus/>
+		<input type="submit" value="Предъявить"/>
+	</form></center>
+{% endblock %}
