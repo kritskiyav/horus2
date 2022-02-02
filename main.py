@@ -58,9 +58,9 @@ def setup_app(application):
    setup(application, SimpleCookieStorage()) # настройка aiohttp-session
    check_sqlite_dbase()
 
-app = web.Application()  # создаем наш веб-сервер
-setup_app(app)
+my_app = web.Application()  # создаем наш веб-сервер
+setup_app(my_app)
 
-if __name__ == "__main__":  # эта строчка указывает, что данный файл можно запустить как скрипт
+#if __name__ == "__main__":  # эта строчка указывает, что данный файл можно запустить как скрипт
    #setup_app(app)  # настраиваем приложение
-   web.run_app(app)  # запускаем приложение
+   #web.run_app(app)  # запускаем приложение
