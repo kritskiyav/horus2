@@ -59,7 +59,8 @@ def setup_app(application):
    check_sqlite_dbase()
 
 app = web.Application()  # создаем наш веб-сервер
+setup_app(app)
 
 if __name__ == "__main__":  # эта строчка указывает, что данный файл можно запустить как скрипт
-   setup_app(app)  # настраиваем приложение
+   #setup_app(app)  # настраиваем приложение
    web.run_app(app)  # запускаем приложение
