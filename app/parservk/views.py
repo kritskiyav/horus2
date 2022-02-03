@@ -79,8 +79,7 @@ async def index_post(request):
       await db.execute(query, (ticket, str(datetime.today())))
       await db.commit()
    # запись в log о добавлении тикета в БД
-   with open(l_set['db']['name'], 'a',encoding="utf-8") as f:
-      f.write(f'{str(datetime.today())}: внесена запись с тикетом {ticket}\n')
+   print(f'{str(datetime.today())}: внесена запись с тикетом {ticket}\n')
    
    # await asyncio.gather(read_ticket_csv(ticket))
    # loop = asyncio.get_event_loop()
@@ -106,6 +105,7 @@ async def read_ticket_csv(ticket):
 
 async def find_people_from_tuple(peoples: tuple, ticket):
    res = []
+   print(f'{str(datetime.today())}: приступил к работе над тикетом {ticket}\n')
    for people in peoples:
       name = '%20'.join(people[0].split())
       bday, bmonth, byear = people[1].split('.')
@@ -144,6 +144,8 @@ async def find_people_from_tuple(peoples: tuple, ticket):
          url = vk_start_url+surl['href']
          data = ','.join([i.get_text() for i in sdata.find_all('div','si_slabel')])
          res.append( (ava, name, url, data) )
+         print(f'''{str(datetime.today())}: обработано {peoples.inxex(people)+1}
+            из {len(peoples)} в тикете {ticket}\n''')
          await asyncio.sleep(0)
 
    templateLoader = jinja2.FileSystemLoader(searchpath="templates/")
@@ -160,9 +162,7 @@ async def find_people_from_tuple(peoples: tuple, ticket):
                WHERE ticket = ?'''
       await db.execute(query, (ticket,))
       await db.commit()
-   async with async_open(l_set['db']['name'], 'a',encoding="utf-8") as f:
-         await f.write(
-            f'{str(datetime.today())}: тикет {ticket} помечен как выполненный\n')
+   print(f'{str(datetime.today())}: тикет {ticket} помечен как выполненный\n')
 
 
 @aiohttp_jinja2.template("ticket_get.html")
@@ -183,14 +183,13 @@ async def ticket_post(request):
          async for row in cursor:
             res = row
             break
-
+   print(f'{str(datetime.today())}: {ticket} статус: >{row}<\n')
    if row and row[0] == '1':
       async with aiosqlite.connect(db_set['db']['name']) as db:
          query = f'''DELETE FROM "{db_set['table']['name']}" 
                   WHERE ticket = ?'''
          cursor = await db.execute(query,(user_ticket,))
-      async with async_open(l_set['db']['name'], 'a',encoding="utf-8") as f:
-         await f.write(f'{str(datetime.today())}: удалена запись с тикетом {user_ticket}\n')
+      print(f'{str(datetime.today())}: удалена запись с тикетом {user_ticket}\n')
       async with async_open(f'temp/output_{user_ticket}.html') as f:
          file = await f.read()
       os.remove(f'temp/output_{user_ticket}.html')
