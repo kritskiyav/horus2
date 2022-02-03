@@ -91,12 +91,12 @@ async def read_ticket_csv(ticket):
    # пробуем найти кодировку присланного файла
    my_enc = 'utf-8'
    try:      
-      afp = open(f'temp/{ticket}.csv')
+      afp = open(f'temp/{ticket}.csv', encoding=my_enc)
       for line in afp:
          temp = line.rstrip().split(',')
          break
    except UnicodeDecodeError:
-      my_enc = 'cp850'      
+      my_enc = 'cp1251'      
    finally:
       print(f'{str(datetime.today())}: для тикета {ticket} выбрана кодировка {my_enc}')
    # открываем файл ticket.csv
