@@ -89,11 +89,13 @@ async def index_post(request):
 async def read_ticket_csv(ticket):
    await asyncio.sleep(0)
    # пробуем найти кодировку присланного файла
-   try:
-      my_enc = 'utf-8'
-      f = open(f'temp/{ticket}.csv')
+   my_enc = 'utf-8'
+   try:      
+      afp = open(f'temp/{ticket}.csv')
    except UnicodeDecodeError:
-      my_enc = 'ANSI'
+      my_enc = 'ANSI'      
+   finally:
+      print(f'{str(datetime.today())}: для тикета {ticket} выбрана кодировка {my_enc}\n')
    # открываем файл ticket.csv
    with open(f'temp/{ticket}.csv', encoding=my_enc) as afp:
       find_list = []
