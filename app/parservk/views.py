@@ -88,8 +88,14 @@ async def index_post(request):
 
 async def read_ticket_csv(ticket):
    await asyncio.sleep(0)
+   # пробуем найти кодировку присланного файла
+   try:
+      my_enc = 'utf-8'
+      f = open(f'temp/{ticket}.csv')
+   except UnicodeDecodeError:
+      my_enc = 'ANSI'
    # открываем файл ticket.csv
-   with open(f'temp/{ticket}.csv') as afp:
+   with open(f'temp/{ticket}.csv', encoding=my_enc) as afp:
       find_list = []
       # формируем лист(список) фамилий
       for line in afp:
@@ -134,19 +140,28 @@ async def find_people_from_tuple(peoples: tuple, ticket):
       vk_start_url = 'https://vk.com'
 
       for sname,sava,surl,sdata in zip(a,b,c,d):
-         name = re.search(name_reg ,str(sname))[0][1:-1]
-         ava = re.search(ava_reg, str(sava))[0]
-         ava = re.search(ava_reg, str(sava))[0][5:-3]
+         name = re.search(name_reg ,str(sname))
+         if not name is None:
+            name = name[0][1:-1]
+         else:
+            name = 'ОШИБКА ПОИСКА'
+
+         ava = re.search(ava_reg, str(sava))
+         if not name is None:
+            ava = ava[0][5:-3]
+         else:
+            name = '$ОШИБКА ПОИСКА'
+
          if ava[0] == '/':
              ava = vk_start_url+ava
-         else:
+         elif ava[0] != '$':
              re.sub(ava_fix_path,'',ava)
+
          url = vk_start_url+surl['href']
          data = ','.join([i.get_text() for i in sdata.find_all('div','si_slabel')])
          res.append( (ava, name, url, data) )
-         print(f'''{str(datetime.today())}: обработано {peoples.index(people)+1}
-            из {len(peoples)} в тикете {ticket}\n''')
-         await asyncio.sleep(0)
+      print(f'''{str(datetime.today())}: обработано {peoples.index(people)+1} из {len(peoples)} в тикете {ticket}\n''')
+      await asyncio.sleep(0)
 
    templateLoader = jinja2.FileSystemLoader(searchpath="templates/")
    templateEnv = jinja2.Environment(loader=templateLoader)
