@@ -5,6 +5,7 @@ from aiohttp_session import setup,SimpleCookieStorage
 import sqlite3
 from datetime import datetime
 import gunicorn
+import os
 
 from app.parservk.settings import log_settings as l_set
 from app.parservk.settings import db_settings as db_set
@@ -58,9 +59,12 @@ def setup_app(application):
    setup(application, SimpleCookieStorage()) # настройка aiohttp-session
    check_sqlite_dbase()
 
+env_port = 8080 if os.environ.get('PORT', None) is None else os.environ.get('PORT')
+
+
 my_app = web.Application()  # создаем наш веб-сервер
 setup_app(my_app)
-web.run_app(my_app)
+web.run_app(my_app, port=env_port)
 
 #if __name__ == "__main__":  # эта строчка указывает, что данный файл можно запустить как скрипт
    #setup_app(app)  # настраиваем приложение
