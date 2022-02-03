@@ -96,7 +96,7 @@ async def read_ticket_csv(ticket):
          temp = line.rstrip().split(',')
          break
    except UnicodeDecodeError:
-      my_enc = 'ANSI'      
+      my_enc = 'cp850'      
    finally:
       print(f'{str(datetime.today())}: для тикета {ticket} выбрана кодировка {my_enc}')
    # открываем файл ticket.csv
