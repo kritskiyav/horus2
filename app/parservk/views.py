@@ -15,7 +15,7 @@ from string import ascii_uppercase, digits
 from random import choice
 from datetime import datetime
 #загрузка внутренних модулей проекта
-from app.parservk.settings import log_settings as l_set # импорт настроек во вьюшки
+#from app.parservk.settings import log_settings as l_set # импорт настроек во вьюшки
 from app.parservk.settings import db_settings as db_set # импорт настроек во вьюшки
 # загрузка модулей для обработки/парсинга страниц
 import csv
@@ -144,7 +144,7 @@ async def find_people_from_tuple(peoples: tuple, ticket):
          url = vk_start_url+surl['href']
          data = ','.join([i.get_text() for i in sdata.find_all('div','si_slabel')])
          res.append( (ava, name, url, data) )
-         print(f'''{str(datetime.today())}: обработано {peoples.inxex(people)+1}
+         print(f'''{str(datetime.today())}: обработано {peoples.index(people)+1}
             из {len(peoples)} в тикете {ticket}\n''')
          await asyncio.sleep(0)
 
