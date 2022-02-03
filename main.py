@@ -61,10 +61,10 @@ def setup_app(application):
 
 env_port = 8080 if os.environ.get('PORT', None) is None else os.environ.get('PORT')
 
-
-my_app = web.Application()  # создаем наш веб-сервер
-setup_app(my_app)
-web.run_app(my_app, port=env_port)
+if _name_ == '_main_':
+   my_app = web.Application()  # создаем наш веб-сервер
+   setup_app(my_app)
+   web.run_app(my_app, port=env_port)
 
 #if __name__ == "__main__":  # эта строчка указывает, что данный файл можно запустить как скрипт
    #setup_app(app)  # настраиваем приложение
