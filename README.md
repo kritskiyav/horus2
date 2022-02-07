@@ -8,3 +8,4 @@
 БД: sqlite + aiosqlite.
 
 Временный адрес сайта: https://horus2.herokuapp.com
+Так же создан image для docker, с помощью docker-compose.
