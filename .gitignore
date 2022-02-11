@@ -26,3 +26,4 @@ test_db_viewer.py
 # information for Eclipse / Flash Builder.
 *.csv
 test_bs_viewer.py
+*.pyc

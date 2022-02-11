@@ -198,7 +198,8 @@ async def ticket_get(request):
         async with db.execute(query) as cursor:
             async for row in cursor:
                 if row:
-                    result_list.append((row[0], 'Готов' if int(row[1]) else 'В работе'))
+                    text = '*'*(len(row[0])-4)+row[0][-4:]
+                    result_list.append((text, 'Готов' if int(row[1]) else 'В работе'))
     return {'result_list': result_list}
 
 @aiohttp_jinja2.template("ticket_post.html")
