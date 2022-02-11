@@ -220,6 +220,7 @@ async def ticket_post(request):
             query = f'''DELETE FROM "{db_set['table']['name']}" 
                   WHERE ticket = ?'''
             cursor = await db.execute(query, (user_ticket,))
+            await db.commit()
         print(f'{str(datetime.today())}: удалена запись с тикетом {user_ticket}')
         async with async_open(f'temp/output_{user_ticket}.html') as f:
             file = await f.read()
