@@ -27,3 +27,5 @@ test_db_viewer.py
 *.csv
 test_bs_viewer.py
 *.pyc
+app/parservk/ok_settings
+*.pyc

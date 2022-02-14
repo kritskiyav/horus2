@@ -90,6 +90,7 @@ async def index_post(request):
     raise web.HTTPFound(location=location)
 
 async def read_ticket_csv(ticket):
+    '''Функция считывает пользовательский csv файл и формирует список для поиска'''
     await asyncio.sleep(0)
     # пробуем найти кодировку присланного файла
     my_enc = 'utf-8'
@@ -115,11 +116,17 @@ async def read_ticket_csv(ticket):
     find_list = tuple(find_list)
     # запускаем корутину по поиску
     # await asyncio.gather(find_people_from_tuple(find_list, ticket))
-    asyncio.ensure_future(find_people_from_tuple(find_list, ticket))
+    asyncio.create_task(find_people_from_tuple(find_list, ticket))
 
 async def find_people_from_tuple(peoples: tuple, ticket):
+    '''Функция получает tuple с людьми для поиска и осуществляет поиск в ВК и ОК'''
     res = []
     print(f'{str(datetime.today())}: приступил к работе над тикетом {ticket}')
+
+    # подключаемся к одноклассникам, получаем сессию и bci
+    ok_conn_res = await asyncio.gather(connect_to_ok())
+    ok_session, ok_cookies, ok_params = ok_conn_res[0]
+
     for people in peoples:
         name = '%20'.join(people[0].split())
         bday, bmonth, byear = people[1].split('.')
@@ -131,6 +138,13 @@ async def find_people_from_tuple(peoples: tuple, ticket):
                  'per_page%5D=40&c%5B' +
                  f'q%5D={name}&c%5B' +
                  'section%5D=people')
+
+        # вызываем поиск человека в ОК
+        ok_res = await asyncio.gather(search_in_ok(ok_session,ok_cookies,ok_params,
+                                    name=name, bday=bday, bmonth=bmonth, byear=byear))
+        # если ответ нормальный, добавляем к результатам
+        if type(ok_res[0]) == list and ok_res[0]:
+            res.extend(ok_res[0])
 
         async with aiohttp.ClientSession() as session:
             async with session.get(query) as resp:
@@ -172,6 +186,10 @@ async def find_people_from_tuple(peoples: tuple, ticket):
             f'''{str(datetime.today())}: обработано {peoples.index(people) + 1} из {len(peoples)} в тикете {ticket}''')
         await asyncio.sleep(0)
 
+    # закрываем сессию с ОК
+    await ok_session.close()
+
+    # формируем html результат
     templateLoader = jinja2.FileSystemLoader(searchpath="templates/")
     templateEnv = jinja2.Environment(loader=templateLoader)
     TEMPLATE_FILE = "result.html"
@@ -187,6 +205,83 @@ async def find_people_from_tuple(peoples: tuple, ticket):
         await db.execute(query, (ticket,))
         await db.commit()
     print(f'{str(datetime.today())}: тикет {ticket} помечен как выполненный')
+
+async def connect_to_ok():
+    '''Функция подключения к одноклассникам и получения сессии'''
+    query = 'https://ok.ru'
+    async with aiohttp.ClientSession() as session:
+        async with session.get(query) as resp:
+            user_bci = resp.headers['Set-Cookie'].split('; ')[0].split('=')[1]
+
+    with open('app/parservk/ok_settings') as f:
+        pswd = f.read().rstrip()
+
+    query = 'https://ok.ru/dk?cmd=AnonymLogin&st.cmd=anonymLogin'
+    params = {'st.email': 'kritskiyav',
+            'st.password': pswd,
+            'st.posted': 'set'}
+    cookies = dict(bci=user_bci)
+    session = aiohttp.ClientSession(cookies=cookies)
+    resp = await session.post(query, params=params)
+    print(f'{str(datetime.today())}: подключение к Одноклассникам, статус: {resp.status==200}')
+
+    # Возвращаем сессию и необходимые данные
+    return session,cookies,params
+
+async  def search_in_ok(session,cookies,params,**human):
+    '''функция поиска людей в одноклассниках'''
+    query = (f'https://ok.ru/dk' +
+           '?st.cmd=searchResult' +
+           '&st.mode=Users' +
+           f'&st.bthYear={human["byear"]}' +
+           f'&st.bthMonth={str(int(human["bmonth"])-1)}' +
+           f'&st.query={human["name"]}' +
+           '&st.grmode=Groups' +
+           f'&st.bthDay={human["bday"]}' +
+           '&st.mmode=Track')
+
+    async with session.get(query, params=params) as resp:
+        html_text = await resp.text()
+        soup = bs(html_text, 'html.parser')
+        a = (soup.find_all('div', 'row__px8cs skip-first-gap__m3nyy'))
+
+        name_pattern = r'(?<=\"query\":\")\w+\s+\w+'
+        profile_pattern = r'(?<=href=\")/.+?/.+?(?=\")'
+        ava_pattern = r'(?<=src=\")/.+?/.+?(?=&amp)'
+        info_pattern = r'(?<=div class=\"card-info).+?>\w.+?</div>'
+
+        res = []
+        for item in a:
+            name = re.search(name_pattern, str(item))
+            if name is None:
+                name = 'ОШИБКА ПОИСКА'
+            else:
+                name = name[0]
+
+            url = re.search(profile_pattern, str(item))
+            if url is None:
+                url = 'ОШИБКА ПОИСКА'
+            else:
+                url = 'https://ok.ru' + url[0]
+
+            ava = re.search(ava_pattern, str(item))
+            if ava is None:
+                ava = ('https://pixabay.com/get/'+
+                       'g4e8d93ea241ea62adbd47b63bfbff45318aec043fb948590da022'+
+                       '48383cc76a6397014c3724621120384d1deba9e5813dfd89ac6e50'+
+                       '33a3db3f155eaa9e0ce7444b0d0b4f28d9b85c01be3922e237e8c_640.png')
+            else:
+                ava = ava[0]
+
+            data = re.search(info_pattern, str(item))
+            if data is None:
+                data = 'ОШИБКА ПОИСКА'
+            else:
+                data = data[0][9:]
+            res.append((ava, name, url, data))
+            await asyncio.sleep(0)
+        return res
+    return None
 
 @aiohttp_jinja2.template("ticket_get.html")
 async def ticket_get(request):
