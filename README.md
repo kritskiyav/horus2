@@ -5,7 +5,9 @@
 которая с помощью aiohttp осуществляет запросы к социальной сети ВКонтакте и формирует итоговую таблицу с найденными людьми
 
 Бэкенд:      aiohttp, asyncio, BeautifulSoup, gunicorn
+
 Фронтенд:    nginx
+
 БД:          sqlite + aiosqlite
 
 Адрес сайта: http://horuska.ru
