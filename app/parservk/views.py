@@ -266,10 +266,7 @@ async  def search_in_ok(session,cookies,params,**human):
 
             ava = re.search(ava_pattern, str(item))
             if ava is None:
-                ava = ('https://pixabay.com/get/'+
-                       'g4e8d93ea241ea62adbd47b63bfbff45318aec043fb948590da022'+
-                       '48383cc76a6397014c3724621120384d1deba9e5813dfd89ac6e50'+
-                       '33a3db3f155eaa9e0ce7444b0d0b4f28d9b85c01be3922e237e8c_640.png')
+                ava = ('https://vk.com/images/camera_50.png')
             else:
                 ava = ava[0]
 
@@ -278,6 +275,7 @@ async  def search_in_ok(session,cookies,params,**human):
                 data = 'ОШИБКА ПОИСКА'
             else:
                 data = data[0][9:]
+                data = re.sub(r'\s',' ',data)
             res.append((ava, name, url, data))
             await asyncio.sleep(0)
         return res
