@@ -6,3 +6,6 @@ db_settings = {
     'db': {'name': 'main_sqlite.db'},
     'table': {'name': 'ticket_tdb'},
 }
+search_settings = {
+    'task_list_size': 13
+}
